@@ -117,7 +117,7 @@ void Neural_Network::training_inference(const Matrix& input) {
 }
 
 Neural_Network::Neural_Network(const std::vector<size_t>& layer_info, float learning_rate, float lambda, 
-    bool generate_biases, Cost_Function cost_type) {
+ Cost_Function cost_type) {
 
     if (layer_info.size() == 0) {
         Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
@@ -146,12 +146,12 @@ Neural_Network::Neural_Network(const std::vector<size_t>& layer_info, float lear
     }
 
     // Handle the first layer differently
-    m_layers[0] = new Neural_Network_Layer(layer_info[0], 0, generate_biases, false);
+    m_layers[0] = new Neural_Network_Layer(layer_info[0], 0, false, false);
 
     // For the remaining layers, iterate over layer_info, pulling the number of neurons and the previous
     // layer's neurons too
     for (size_t i = 1; i < m_num_layers; ++i) {
-        m_layers[i] = new Neural_Network_Layer(layer_info[i], layer_info[i - 1], generate_biases, false);
+        m_layers[i] = new Neural_Network_Layer(layer_info[i], layer_info[i - 1], true, false);
     }
 }
 
@@ -500,6 +500,89 @@ Neural_Network* Neural_Network::clone(void) {
     }
 
     return target;
+}
+
+void Neural_Network::save(const char* path) const {
+
+    FILE* model = fopen(path, "w");
+
+    if (model == NULL) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::save",
+            "Unable to open path to save Neural_Network");
+        exit(EXIT_FAILURE);
+    }
+
+    uint32_t header_magic = NN_HEADER_MAGIC;
+    uint32_t weights_magic = NN_WEIGHTS_MAGIC;
+    uint32_t weights_begin = NN_WEIGHT_BEGIN;
+    uint32_t weights_end = NN_WEIGHT_END;
+
+    // Write the header magic before starting anything else
+    fwrite(&header_magic, sizeof(uint32_t), 1, model);
+    // Write the learning rate of the model
+    fwrite(&(m_learning_rate), sizeof(float), 1, model);
+    // Write the lambda of the model
+    fwrite(&(m_lambda), sizeof(float), 1, model);
+    // Write the cost function type
+    uint32_t cost_type = (uint32_t)m_cost_type;
+    fwrite(&cost_type, sizeof(uint32_t), 1, model);
+
+    // Write the number of layers
+    fwrite(&(m_num_layers), sizeof(size_t), 1, model);
+    // For each layer, write the number of neurons
+
+    for (size_t i = 0; i < m_num_layers; ++i) {
+
+        size_t current_neurons = m_layers[i]->get_num_neurons();
+        fwrite(&current_neurons, sizeof(size_t), 1, model);
+    }
+
+    // Write the magic for the start of the weights section
+    fwrite(&weights_magic, sizeof(uint32_t), 1, model);
+    // Set up a float to store the weights / biases as they are read
+    float current_value = 0;
+
+    // Iterate over the layers, ignoring the input layer since it has no weights or biases
+    for (size_t i = 1; i < m_num_layers; ++i) {
+        // Signal the beginning of a weights Matrix
+        fwrite(&weights_begin, sizeof(uint32_t), 1, model);
+        const Matrix& weights = m_layers[i]->get_const(Layer_Type::WEIGHTS);
+
+        for (size_t j = 0; j < weights.rows(); ++j) {
+            for (size_t k = 0; k < weights.cols(); ++k) {
+
+                current_value = weights.get(j, k);
+                fwrite(&current_value, sizeof(float), 1, model);
+            }
+        }
+        // Signal the end of a weights Matrix
+        fwrite(&weights_end, sizeof(uint32_t), 1, model);
+    }
+
+    uint32_t biases_magic = NN_BIASES_MAGIC;
+    uint32_t bias_begin = NN_BIAS_BEGIN;
+    uint32_t bias_end = NN_BIAS_END;
+
+    // Write the magic for the start of the biases section
+    fwrite(&biases_magic, sizeof(uint32_t), 1, model);
+
+    // Iterate over the layers, ignoring the input layer since it has no weights or biases
+    for (size_t i = 1; i < m_num_layers; ++i) {
+
+        // Signal the beginning of a weights Matrix
+        fwrite(&bias_begin, sizeof(uint32_t), 1, model);
+        const Matrix& biases = m_layers[i]->get_const(Layer_Type::BIASES);
+
+        for (size_t j = 0; j < biases.rows(); ++j) {
+
+            current_value = biases.get(j, 0);
+            fwrite(&current_value, sizeof(float), 1, model);
+        }
+        // Signal the end of a weights Matrix
+        fwrite(&bias_end, sizeof(uint32_t), 1, model);
+    }
+
+    fclose(model);
 }
 
 float Neural_Network_NS::sigmoid(float z) {

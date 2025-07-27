@@ -15,22 +15,18 @@
  * TODO: Continue adding functionality 
  */
 
-#include "include/main.hpp"
+#ifndef MODEL_CONFIG_HPP
+#define MODEL_CONFIG_HPP
 
+/* Standard dependencies */
+#include <vector>
+#include <string>
+#include <string_view>
 
-int main(int argc, char* argv[]) {
+/* Local dependencies */
 
-    Log::log_message(Log::Log_Priority::WARNING, "main::main", "Hello");
+namespace Model_Config_NS {
 
-    for (int i = 1; i < argc; ++i) {
-        std::cout << argv[i] << "\n";
-    }
+};
 
-    //std::vector<size_t> layer_info = {28 * 28, 100, 10};
-
-    //MNIST_Training_NS::train_new_model("../data/train-labels-idx1-ubyte", "../data/train-images-idx3-ubyte",
-    //    layer_info, 0.1, 0.1, 3000, 1, Neural_Network_NS::Cost_Function::QUADRATIC, 
-    //    "../models/test.model");
-
-    return 0;
-}
+#endif

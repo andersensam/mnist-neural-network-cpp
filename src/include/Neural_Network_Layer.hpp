@@ -41,8 +41,7 @@ typedef enum {
     OUTPUTS = 2,
     ERRORS = 3,
     NEW_WEIGHTS = 4,
-    NEW_BIASES = 5,
-    Z = 6
+    Z = 5
 } Layer_Type;
 
 class Neural_Network_Layer {
@@ -55,7 +54,6 @@ private:
     Matrix* m_outputs = NULL;
     Matrix* m_errors = NULL;
     Matrix* m_new_weights = NULL;
-    Matrix* m_new_biases = NULL;
     Matrix* m_z = NULL;
 
     /* Private functions */

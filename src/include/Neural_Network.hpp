@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-21
+ * @version: 2025-07-22
  *
  * General Notes:
  *
@@ -22,9 +22,40 @@
 #define NEURAL_NETWORK_SHOW_STEP_LOSS 1
 #define NEURAL_NETWORK_SHOW_LOSS_NUM_STEPS 100
 
+/* Markers to help with loading / saving Neural Networks */
+#define NN_HEADER_MAGIC 0x0000AA00
+#define NN_WEIGHTS_MAGIC 0x00000A00
+#define NN_WEIGHT_BEGIN 0x00000A01
+#define NN_WEIGHT_END 0x00000A02
+#define NN_BIASES_MAGIC 0x00000F00
+#define NN_BIAS_BEGIN 0x00000F01
+#define NN_BIAS_END 0x00000F02
+
+/**
+ * File structure for model
+ * 
+ * uint32_t NN_HEADER_MAGIC
+ * float learning_rate (generally 0.1)
+ * float lambda (generally 0.1)
+ * uint32_t cost_function (0 = Quadratic, 1 = Cross Entropy)
+ * size_t number_of_layers
+ * size_t[number_of_layers] number_of_neurons
+ * 
+ * uint32_t NN_WEIGHTS_MAGIC
+ *   uint32_t NN_WEIGHT_BEGIN
+ *   float[number_of_neurons * previous_layer_neurons] weight
+ *   uint32_t NN_WEIGHT_END
+ * 
+ * uint32_t NN_BIASES_MAGIC
+ *   uint32_t NN_BIAS_BEGIN
+ *   float[number_of_neurons] bias
+ *   uint32_t NN_BIAS_END
+ */
+
 /* Standard dependencies */
 #include <vector>
 #include <math.h>
+#include <stdio.h>
 
 /* Local dependencies */
 #include "Log.hpp"
@@ -39,8 +70,8 @@ using Layer_Type = Neural_Network_Layer_NS::Layer_Type;
 namespace Neural_Network_NS {
 
 typedef enum {
-    QUADRATIC,
-    CROSS_ENTROPY
+    QUADRATIC = 0,
+    CROSS_ENTROPY = 1
 } Cost_Function;
 
 class Quadratic_Cost {
@@ -111,16 +142,19 @@ public:
      * @param layer_info Vector of size_t containing the sizes of each layer and number of layers
      * @param learning_rate Hyperparameter controlling the learning rate of the network
      * @param lambda Regularization hyperparameter
-     * @param generate_biases Whether or not to generate biases upon creation
      * @param cost_function Type of cost function to use
      */
-    Neural_Network(const std::vector<size_t>& layer_info, float learning_rate, float lambda, 
-        bool generate_biases, Cost_Function cost_function);
+    Neural_Network(const std::vector<size_t>& layer_info, float learning_rate, float lambda, Cost_Function cost_function);
 
     /**
      * Constructor for making a copy of a Neural_Network
      */
     Neural_Network();
+
+    /**
+     * Constructor for loading a Neural_Network from a file
+     * @param path Path to the Neural_Network file
+     */
 
     /**
      * Destructor for Neural_Network
@@ -170,6 +204,12 @@ public:
      * Create a deep copy of a Neural Network
      */
     Neural_Network* clone(void);
+
+    /**
+     * Save a Neural Network to a file
+     * @param path Path to save the Neural Network at
+     */
+    void save(const char* path) const;
 };
 
 /**

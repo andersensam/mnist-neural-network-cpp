@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-06-24
+ * @version: 2025-07-23
  *
  * General Notes:
  *
@@ -18,10 +18,15 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
+/* Standard dependencies */
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+/* Local dependencies */
 #include "Log.hpp"
-#include "Matrix.hpp"
-#include "Neural_Network_Layer.hpp"
+#include "MNIST_Training.hpp"
 #include "Neural_Network.hpp"
-#include "MNIST_Utils.hpp"
 
 #endif
