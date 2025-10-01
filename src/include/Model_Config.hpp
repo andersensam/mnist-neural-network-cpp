@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-23
+ * @version: 2025-09-30
  *
  * General Notes:
  *
@@ -22,11 +22,82 @@
 #include <vector>
 #include <string>
 #include <string_view>
+#include <ranges>
+#include <iostream>
+#include <cstdio>
 
 /* Local dependencies */
+#include "Log.hpp"
 
 namespace Model_Config_NS {
 
+/**
+ * Enum to prevent repetitive conversion code between
+ * strings and their numerical representations
+ */
+typedef enum {
+    FLOAT,
+    SIZE_T
+} Flag_Conversion_Type;
+
+/* Use macros here for easy expansion later */
+#define FLOAT_SSCANF_FMT "%f"
+#define SIZE_T_SSCANF_FMT "%zu"
+
+typedef struct Model_Config {
+    /**
+     * Integer representation of the Cost_Function (can be cast)
+     */
+    int cost_function = 2;
+    /**
+     * Learning rate
+     */
+    float learning_rate = 0;
+    /**
+     * Lambda hyperparameter
+     */
+    float lamba = 0;
+    /**
+     * Number of layers and their corresponding number of neurons
+     */
+    std::vector<size_t> layer_info = std::vector<size_t>();
+    /**
+     * Number of images to train on from the dataset
+     */
+    size_t num_train = 0;
+    /**
+     * Numer of epochs to train on
+     */
+    size_t epochs = 0;
+    /** 
+     * Batch size 
+     */
+    size_t batch_size = 0;
+} Model_Config;
+
+/**
+ * Parse a command line flag for training a model
+ * @param flag String to parse
+ * @param config Reference to a Model_Config to populate
+ * @returns True if parsed properly, False if the config doesn't parse
+ */
+bool parse_flag(const std::string& flag, Model_Config& config);
+
+/**
+ * Convert a flag value to numerical representation
+ * @param flag Const reference to a string to parse the value from
+ * @param type Flag_Conversion_Type for the conversion itself
+ * @param dest void* of the destination
+ * @returns True if it's a valid conversion, False if it's invalid
+ */
+bool convert_flag_to_num(const std::string& flag, Flag_Conversion_Type type, void* dest);
+
+/**
+ * Validate all flags are set in the model config
+ * @param config Reference to a Model_Config to check
+ * @returns True if all required values are set, False if something is missing
+ */
+bool check_config(Model_Config& config);
 };
 
 #endif

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-23
+ * @version: 2025-09-30
  *
  * General Notes:
  *
@@ -20,10 +20,44 @@
 
 int main(int argc, char* argv[]) {
 
+    if (argc < 2) {
+
+        Log::log_message(Log::Log_Priority::ERROR, "main::main",
+            "Invalid arguments provided. Exiting...");
+        exit(-1);
+    }
+
     Log::log_message(Log::Log_Priority::WARNING, "main::main", "Hello");
 
     for (int i = 1; i < argc; ++i) {
         std::cout << argv[i] << "\n";
+    }
+
+    const std::string& command = std::string(argv[1]);
+    Model_Config_NS::Model_Config config = {};
+
+    if (command == "train") {
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Training mode selected. Checking trainer config...");
+        for (int i = 2; i < argc; ++i) {
+            Model_Config_NS::parse_flag(argv[i], config);
+        }
+        if (!Model_Config_NS::check_config(config)) {
+            Log::log_message(Log::Log_Priority::ERROR, "main::main", "Trainer config incomplete. Please provide a valid config.");
+            exit(-1);
+        }
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Trainer config validated. Starting training loop...");
+        MNIST_Training_NS::train_new_model("../data/train-labels-idx1-ubyte", "../data/train-images-idx3-ubyte",
+            config.layer_info, config.learning_rate, config.lamba, config.num_train, config.epochs,
+            (Neural_Network_NS::Cost_Function)config.cost_function, "../models/test.model");
+    }
+    else if (command == "inference") {
+        std::cout << "inf\n";
+    }
+    else if (command == "help") {
+        std::cout << "Help\n";
+    }
+    else {
+        std::cerr << "Invalid command provided\n";
     }
 
     //std::vector<size_t> layer_info = {28 * 28, 100, 10};

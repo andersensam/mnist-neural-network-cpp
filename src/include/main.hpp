@@ -24,9 +24,11 @@
 #include <sstream>
 #include <string>
 
+
 /* Local dependencies */
 #include "Log.hpp"
 #include "MNIST_Training.hpp"
 #include "Neural_Network.hpp"
+#include "Model_Config.hpp"
 
 #endif

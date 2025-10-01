@@ -54,8 +54,8 @@
 
 /* Standard dependencies */
 #include <vector>
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 /* Local dependencies */
 #include "Log.hpp"

@@ -23,7 +23,7 @@
 
 /* Standard dependencies */
 #include <cstdlib>
-#include <math.h>
+#include <cmath>
 
 /* Local dependencies */
 #include "Log.hpp"
