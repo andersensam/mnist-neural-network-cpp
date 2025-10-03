@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-22
+ * @version: 2025-10-02
  *
  * General Notes:
  *
@@ -22,21 +22,20 @@ using Neural_Network = Neural_Network_NS::Neural_Network;
 using MNIST_Images = MNIST_Utils_NS::MNIST_Images;
 using MNIST_Labels = MNIST_Utils_NS::MNIST_Labels;
 
-void MNIST_Training_NS::train_new_model(const char* labels_path, const char* images_path, 
-    const std::vector<size_t>& layer_info, float learning_rate, float lambda, size_t num_training_images, 
-    size_t epochs, Neural_Network_NS::Cost_Function cost_function, const char* model_path) {
+void MNIST_Training_NS::train_new_model(const Model_Config_NS::Model_Config& config) {
 
-    MNIST_Images images = MNIST_Images(images_path);
-    MNIST_Labels labels = MNIST_Labels(labels_path);
+    MNIST_Images images = MNIST_Images(config.training_dataset_path);
+    MNIST_Labels labels = MNIST_Labels(config.training_labels_path);
 
-    if (layer_info.size() == 0) {
+    if (config.layer_info.size() == 0) {
         Log::log_message(Log::Log_Priority::ERROR, "train_new_model",
             "Invalid layer_info vector provided");
         return;
     }
 
     // Instantiate the Neural Network
-    Neural_Network nn = Neural_Network(layer_info, learning_rate, lambda, cost_function);
+    Neural_Network nn = Neural_Network(config.layer_info, config.learning_rate, 
+        config.lambda, static_cast<Neural_Network_NS::Cost_Function>(config.cost_function));
 
     // Setup Matrix instances that will be reused for processing images and labels
     Matrix current_image = Matrix(MNIST_IMAGE_SIZE, 1);
@@ -47,17 +46,17 @@ void MNIST_Training_NS::train_new_model(const char* labels_path, const char* ima
     // Track the loss
     float loss = 0;
 
-    for (size_t i = 0; i < epochs; ++i) {
+    for (size_t i = 0; i < config.epochs; ++i) {
 
         // Create a shuffled index array
         shuffled_index = create_index_array(images.size());
 
         // Iterate through the number of images per epoch
-        for (size_t j = 0; j < num_training_images; ++j) {
+        for (size_t j = 0; j < config.num_train; ++j) {
             
             images.get_flat(shuffled_index[i], current_image);
             labels.create_label(shuffled_index[i], current_label);
-            loss = nn.train(current_image, current_label, num_training_images);
+            loss = nn.train(current_image, current_label, config.num_train);
 
             if (MNIST_TRAINING_SHOW_LOSS) {
                 if (j % MNIST_TRAINING_SHOW_LOSS_STEPS == 0) {
@@ -68,7 +67,7 @@ void MNIST_Training_NS::train_new_model(const char* labels_path, const char* ima
         }
         free(shuffled_index);
     }
-    nn.save(model_path);
+    nn.save(config.model_path.c_str());
 }
 
 void MNIST_Training_NS::shuffle(size_t* index, size_t elements) {

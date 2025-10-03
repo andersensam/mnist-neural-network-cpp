@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-09-30
+ * @version: 2025-10-02
  *
  * General Notes:
  *
@@ -56,7 +56,7 @@ typedef struct Model_Config {
     /**
      * Lambda hyperparameter
      */
-    float lamba = 0;
+    float lambda = 0;
     /**
      * Number of layers and their corresponding number of neurons
      */
@@ -73,6 +73,18 @@ typedef struct Model_Config {
      * Batch size 
      */
     size_t batch_size = 0;
+    /**
+     * Path to the training dataset (MNIST Images)
+     */
+    std::string training_dataset_path = std::string();
+    /**
+     * Path to the training labels (MNIST Labels)
+     */
+    std::string training_labels_path = std::string();
+    /**
+     * Path to write the model to after training (or read from)
+     */
+    std::string model_path = std::string();
 } Model_Config;
 
 /**
@@ -93,11 +105,11 @@ bool parse_flag(const std::string& flag, Model_Config& config);
 bool convert_flag_to_num(const std::string& flag, Flag_Conversion_Type type, void* dest);
 
 /**
- * Validate all flags are set in the model config
+ * Validate all flags are set in the model config to start a training loop
  * @param config Reference to a Model_Config to check
  * @returns True if all required values are set, False if something is missing
  */
-bool check_config(Model_Config& config);
+bool check_training_config(Model_Config& config);
 };
 
 #endif

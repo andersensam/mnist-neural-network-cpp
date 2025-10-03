@@ -278,16 +278,16 @@ float Neural_Network::train(const Matrix& input, const Matrix& label, size_t dat
 float Neural_Network::batch_train(const Matrix& inputs, const Matrix& labels, size_t dataset_size) {
 
     if (m_layers == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::train",
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::batch_train",
             "m_layers is NULL. Cannot perform training");
         exit(EXIT_FAILURE);
     }
 
     if (inputs.cols() != labels.cols()) {
-        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::train",
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::batch_train",
             "Number of columns in inputs and labels needs to match");
         if (NEURAL_NETWORK_DEBUG) {
-            Log::log_message(Log::Log_Priority::DEBUG, "Neural_Network::train",
+            Log::log_message(Log::Log_Priority::DEBUG, "Neural_Network::batch_train",
                 std::format("Inputs has {} columns, while labels has {}",
                     inputs.cols(), labels.cols()));
         }
@@ -299,7 +299,7 @@ float Neural_Network::batch_train(const Matrix& inputs, const Matrix& labels, si
     Matrix** nabla_b = (Matrix**)calloc(m_num_layers - 1, sizeof(Matrix*));
 
     if (nabla_w == NULL || nabla_b == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::train",
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::batch_train",
             "Unable to allocate memory for nabla_w or nabla_b. Exiting");
         exit(EXIT_FAILURE);
     }

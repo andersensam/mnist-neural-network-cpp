@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-09-30
+ * @version: 2025-10-02
  *
  * General Notes:
  *
@@ -105,7 +105,7 @@ bool Model_Config_NS::parse_flag(const std::string& flag, Model_Config& config) 
         }
 
         if (lambda > 0) {
-            config.lamba = lambda;
+            config.lambda = lambda;
             return true;
         }
 
@@ -164,6 +164,18 @@ bool Model_Config_NS::parse_flag(const std::string& flag, Model_Config& config) 
             "Batch size cannot be zero");
         return false;
     }
+    else if (flag.find("--training_dataset=") != std::string::npos) {
+
+        config.training_dataset_path = flag_value;
+    }
+    else if (flag.find("--training_labels=") != std::string::npos) {
+
+        config.training_labels_path = flag_value;
+    }
+    else if (flag.find("--model_path=") != std::string::npos) {
+        
+        config.model_path = flag_value;
+    }
     return false;
 }
 
@@ -196,13 +208,16 @@ bool Model_Config_NS::convert_flag_to_num(const std::string& flag, Flag_Conversi
     }
 }
 
-bool Model_Config_NS::check_config(Model_Config& config) {
+bool Model_Config_NS::check_training_config(Model_Config& config) {
 
     // Check the minimum configuration and then add default values as needed
     if (config.layer_info.size() >= 3 &&
         config.learning_rate > 0 &&
-        config.lamba > 0 &&
-        config.num_train > 0) {
+        config.lambda > 0 &&
+        config.num_train > 0 &&
+        !config.training_dataset_path.empty() &&
+        !config.training_labels_path.empty() &&
+        !config.model_path.empty()) {
 
         // 2 is an invalid value for cost_function (default value)
         if (config.cost_function == 2) {

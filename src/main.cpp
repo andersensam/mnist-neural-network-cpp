@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-09-30
+ * @version: 2025-10-02
  *
  * General Notes:
  *
@@ -41,14 +41,12 @@ int main(int argc, char* argv[]) {
         for (int i = 2; i < argc; ++i) {
             Model_Config_NS::parse_flag(argv[i], config);
         }
-        if (!Model_Config_NS::check_config(config)) {
+        if (!Model_Config_NS::check_training_config(config)) {
             Log::log_message(Log::Log_Priority::ERROR, "main::main", "Trainer config incomplete. Please provide a valid config.");
             exit(-1);
         }
         Log::log_message(Log::Log_Priority::INFO, "main::main", "Trainer config validated. Starting training loop...");
-        MNIST_Training_NS::train_new_model("../data/train-labels-idx1-ubyte", "../data/train-images-idx3-ubyte",
-            config.layer_info, config.learning_rate, config.lamba, config.num_train, config.epochs,
-            (Neural_Network_NS::Cost_Function)config.cost_function, "../models/test.model");
+        MNIST_Training_NS::train_new_model(config);
     }
     else if (command == "inference") {
         std::cout << "inf\n";
@@ -59,12 +57,6 @@ int main(int argc, char* argv[]) {
     else {
         std::cerr << "Invalid command provided\n";
     }
-
-    //std::vector<size_t> layer_info = {28 * 28, 100, 10};
-
-    //MNIST_Training_NS::train_new_model("../data/train-labels-idx1-ubyte", "../data/train-images-idx3-ubyte",
-    //    layer_info, 0.1, 0.1, 3000, 1, Neural_Network_NS::Cost_Function::QUADRATIC, 
-    //    "../models/test.model");
 
     return 0;
 }

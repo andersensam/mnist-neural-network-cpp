@@ -20,8 +20,8 @@
 
 /* Standard dependencies */
 #include <iostream>
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 
 namespace Log {
 

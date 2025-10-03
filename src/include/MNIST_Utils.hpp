@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-21
+ * @version: 2025-10-02
  *
  * General Notes:
  *
@@ -33,9 +33,10 @@
 #define MNIST_IMAGE_SIZE MNIST_IMAGE_WIDTH * MNIST_IMAGE_HEIGHT
 
 /* Standard dependencies */
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 
 /* Local dependencies */
 #include "Matrix.hpp"
@@ -68,7 +69,7 @@ public:
      * Constructor for MNIST_Images
      * @param path Path to file containing the MNIST image collection
      */
-    MNIST_Images(const char* path);
+    MNIST_Images(const std::string& path);
 
     /**
      * Destructor for MNIST_Images
@@ -143,7 +144,7 @@ public:
      * Constructor for MNIST_Labels
      * @param path Path to the file containing the MNIST labels
      */
-    MNIST_Labels(const char* path);
+    MNIST_Labels(const std::string& path);
 
     /**
      * Destructor for MNIST_Labels

@@ -45,10 +45,10 @@ bool MNIST_Images::exists(size_t index) const {
     return true;
 }
 
-MNIST_Images::MNIST_Images(const char* path) {
+MNIST_Images::MNIST_Images(const std::string& path) {
 
     // Open the path to where the images are stored, in read-only mode
-    FILE* images_file = fopen(path, "ro");
+    FILE* images_file = fopen(path.c_str(), "ro");
 
     if (images_file == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::MNIST_Images",
@@ -281,10 +281,10 @@ bool MNIST_Labels::exists(size_t index) const {
     return true;
 }
 
-MNIST_Labels::MNIST_Labels(const char* path) {
+MNIST_Labels::MNIST_Labels(const std::string& path) {
 
     // Open the path to where the labels are stored, in read-only mode
-    FILE* labels_file = fopen(path, "ro");
+    FILE* labels_file = fopen(path.c_str(), "ro");
 
     if (labels_file == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
