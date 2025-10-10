@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-02
+ * @version: 2025-10-09
  *
  * General Notes:
  *
@@ -130,6 +130,23 @@ bool Model_Config_NS::parse_flag(const std::string& flag, Model_Config& config) 
             "num_train cannot be zero");
         return false;
     }
+    else if (flag.find("--num_inference=") != std::string::npos) {
+
+        size_t num_inference = 0;
+
+        if (!convert_flag_to_num(flag_value, Flag_Conversion_Type::SIZE_T, &num_inference)) {
+            return false;
+        }
+
+        if (num_inference > 0) {
+            config.num_inference = num_inference;
+            return true;
+        }
+
+        Log::log_message(Log::Log_Priority::ERROR, "Model_Config::parse_flag",
+            "num_inference cannot be zero");
+        return false;
+    }
     else if (flag.find("--epochs=") != std::string::npos) {
 
         size_t epochs = 0;
@@ -164,13 +181,13 @@ bool Model_Config_NS::parse_flag(const std::string& flag, Model_Config& config) 
             "Batch size cannot be zero");
         return false;
     }
-    else if (flag.find("--training_dataset=") != std::string::npos) {
+    else if (flag.find("--dataset_path=") != std::string::npos) {
 
-        config.training_dataset_path = flag_value;
+        config.dataset_path = flag_value;
     }
-    else if (flag.find("--training_labels=") != std::string::npos) {
+    else if (flag.find("--labels_path=") != std::string::npos) {
 
-        config.training_labels_path = flag_value;
+        config.labels_path = flag_value;
     }
     else if (flag.find("--model_path=") != std::string::npos) {
         
@@ -208,37 +225,87 @@ bool Model_Config_NS::convert_flag_to_num(const std::string& flag, Flag_Conversi
     }
 }
 
-bool Model_Config_NS::check_training_config(Model_Config& config) {
+bool Model_Config_NS::check_online_training_config(Model_Config& config) {
 
     // Check the minimum configuration and then add default values as needed
     if (config.layer_info.size() >= 3 &&
         config.learning_rate > 0 &&
         config.lambda > 0 &&
         config.num_train > 0 &&
-        !config.training_dataset_path.empty() &&
-        !config.training_labels_path.empty() &&
+        !config.dataset_path.empty() &&
+        !config.labels_path.empty() &&
         !config.model_path.empty()) {
 
         // 2 is an invalid value for cost_function (default value)
         if (config.cost_function == 2) {
             // Set the default cost_function to 0 (quadratic cost)
             config.cost_function = 0;
-            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_config",
+            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_online_training_config",
                 "No cost function provided. Defaulting to quadratic cost.");
         }
         if (config.epochs == 0) {
             // Set the number of epochs as 1 by default
             config.epochs = 1;
-            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_config",
+            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_online_training_config",
                 "No epochs specified. Defaulting to 1.");
         }
-        if (config.batch_size == 0) {
-            config.batch_size = 1;
-            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_config",
-                "No batch size specified. Defaulting to 1.");
+        if (config.batch_size != 0) {
+            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_online_training_config",
+                std::format("Batch size set to {}, but online training does not use batch. Ignoring...", config.batch_size));
         }
 
         // Return true after issuing any warning related to default configs
+        return true;
+    }
+    return false;
+}
+
+bool Model_Config_NS::check_batch_training_config(Model_Config& config) {
+
+    // Check the minimum configuration and then add default values as needed
+    if (config.layer_info.size() >= 3 &&
+        config.learning_rate > 0 &&
+        config.lambda > 0 &&
+        config.num_train > 0 &&
+        config.batch_size > 0 &&
+        !config.dataset_path.empty() &&
+        !config.labels_path.empty() &&
+        !config.model_path.empty()) {
+
+        // 2 is an invalid value for cost_function (default value)
+        if (config.cost_function == 2) {
+            // Set the default cost_function to 0 (quadratic cost)
+            config.cost_function = 0;
+            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_batch_training_config",
+                "No cost function provided. Defaulting to quadratic cost.");
+        }
+        if (config.epochs == 0) {
+            // Set the number of epochs as 1 by default
+            config.epochs = 1;
+            Log::log_message(Log::Log_Priority::WARNING, "Model_Config::check_batch_training_config",
+                "No epochs specified. Defaulting to 1.");
+        }
+        if (config.batch_size < 2) {
+            // We need a batch size of at least 2
+            Log::log_message(Log::Log_Priority::ERROR, "Model_Config::check_batch_training_config",
+                "Batch size must be >= 2");
+            return false;
+        }
+
+        // Return true after issuing any warning related to default configs
+        return true;
+    }
+    return false;
+}
+
+bool Model_Config_NS::check_inference_config(Model_Config& config) {
+
+    // Check the minimum configuration 
+    if (config.num_inference > 0 &&
+        !config.dataset_path.empty() &&
+        !config.labels_path.empty() &&
+        !config.model_path.empty()) {
+
         return true;
     }
     return false;

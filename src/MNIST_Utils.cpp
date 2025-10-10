@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-21
+ * @version: 2025-10-09
  *
  * General Notes:
  *
@@ -93,7 +93,7 @@ MNIST_Images::MNIST_Images(const std::string& path) {
     }
 
     // Allocate memory for storing the image Matrix instances
-    m_images = (Matrix**)calloc(m_num_images, sizeof(Matrix*));
+    m_images = static_cast<Matrix**>(calloc(m_num_images, sizeof(Matrix*)));
     if (m_images == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::MNIST_Images",
             "Unable to allocate memory for storing image data");
@@ -239,7 +239,7 @@ void MNIST_Images::create_images_from_range(size_t image_start, size_t image_end
         exit(EXIT_FAILURE);
     }
 
-    size_t target_num_images = image_end - image_start;
+    size_t target_num_images = image_end - image_start + 1;
     if (destination.cols() != target_num_images) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::create_images_from_range",
             "Destination Matrix size incorrect");
@@ -320,7 +320,7 @@ MNIST_Labels::MNIST_Labels(const std::string& path) {
     }
 
     // Allocate memory for storing the labels themselves
-    m_labels = (uint8_t*)calloc(m_num_labels, sizeof(uint8_t));
+    m_labels = static_cast<uint8_t*>(calloc(m_num_labels, sizeof(uint8_t)));
     if (m_labels == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
             "Unable to allocate memory to store labels");
@@ -440,13 +440,14 @@ void MNIST_Labels::create_labels_from_range(size_t label_start, size_t label_end
             "m_labels is NULL. Not returning a value");
         exit(EXIT_FAILURE);
     }
-    if ((label_end - label_start) != destination.cols()) {
+    size_t target_num_labels = label_end - label_start + 1;
+    if (target_num_labels != destination.cols()) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::create_labels_from_range",
             "Number of labels to process and size of destination Matrix do not match");
         if (MNIST_UTILS_DEBUG) {
             Log::log_message(Log::Log_Priority::DEBUG, "MNIST_Labels::create_labels_from_range",
                 std::format("Got number of labels {}, but Matrix has {} columns",
-                    label_end - label_start, destination.cols()));
+                    target_num_labels, destination.cols()));
         }
         exit(EXIT_FAILURE);
     }
@@ -454,7 +455,7 @@ void MNIST_Labels::create_labels_from_range(size_t label_start, size_t label_end
     destination.populate(0);
 
     // Iterate over the label range and set the value in each Matrix
-    for (size_t i = 0; i < (label_end - label_start); ++i) {
+    for (size_t i = 0; i < target_num_labels; ++i) {
 
         // Convert to size_t since we are going to use this as an index
         size_t label_value = (size_t)m_labels[label_start + i];

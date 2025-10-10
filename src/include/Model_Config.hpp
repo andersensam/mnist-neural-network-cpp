@@ -66,6 +66,10 @@ typedef struct Model_Config {
      */
     size_t num_train = 0;
     /**
+     * Number of images to run inference / eval on
+     */
+    size_t num_inference = 0;
+    /**
      * Numer of epochs to train on
      */
     size_t epochs = 0;
@@ -76,11 +80,11 @@ typedef struct Model_Config {
     /**
      * Path to the training dataset (MNIST Images)
      */
-    std::string training_dataset_path = std::string();
+    std::string dataset_path = std::string();
     /**
      * Path to the training labels (MNIST Labels)
      */
-    std::string training_labels_path = std::string();
+    std::string labels_path = std::string();
     /**
      * Path to write the model to after training (or read from)
      */
@@ -105,11 +109,26 @@ bool parse_flag(const std::string& flag, Model_Config& config);
 bool convert_flag_to_num(const std::string& flag, Flag_Conversion_Type type, void* dest);
 
 /**
- * Validate all flags are set in the model config to start a training loop
+ * Validate all flags are set in the model config to start an online training loop
  * @param config Reference to a Model_Config to check
  * @returns True if all required values are set, False if something is missing
  */
-bool check_training_config(Model_Config& config);
+bool check_online_training_config(Model_Config& config);
+
+/**
+ * Validate all flags are set in the model config to start a batch training loop
+ * @param config Reference to a Model_Config to check
+ * @returns True if all required values are set, False if something is missing
+ */
+bool check_batch_training_config(Model_Config& config);
+
+/**
+ * Validate all flags are set for inference
+ * @param config Reference to a Model_Config to check
+ * @returns True if all required values are set
+ */
+bool check_inference_config(Model_Config& config);
+
 };
 
 #endif

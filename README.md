@@ -1,32 +1,14 @@
 # MNIST Neural Network in C++
 
-This projects aims to create a basic, flexible neural network implementation in C, that predicts the numbers depicted in handwritten images in the MNIST dataset.
+This projects aims to create a basic, flexible neural network implementation in C++, that predicts the numbers depicted in handwritten images in the MNIST dataset.
 
-There are a number of inspirations for this project, including:
-
-AndrewCarterUK's [repo](https://github.com/AndrewCarterUK/mnist-neural-network-plain-c)
-
-3 Blue 1 Brown's [YouTube series on neural networks](https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi)
-
-Mark Kraay's [YouTube video](https://www.youtube.com/watch?v=ReOxVMxS83o) and [accompanying repo](https://github.com/markkraay/mnist-from-scratch)
-
-CyberZHG's [repo on layer normalization](https://github.com/CyberZHG/torch-layer-normalization)
-
-## Approach to this Neural Network
-
-This project is a naive attempt at building a simple neural network and has a few 'shortcuts' taken, including a lack of multithreaded training and GPU utilization.
-
-I hope to update this repo as time goes on with adjustments to the error, activation, and training methods.
-
-I have tried to make the underlying code as flexible as possible, allowing for quick adjustments to the number of layers, neurons, biases, etc. To see my convoluted implementation of a matrix library in C, check out [Matrix](https://github.com/andersensam/Matrix).
-
-As you may expect, the models exported from this neural network cannot be used with any other existing framework that I'm aware of. I had fun coming up with a different file format based on the [Yann LeCun MNIST dataset](https://yann.lecun.com/exdb/mnist/).
+This is a follow on to my original MNIST Neural Network in C, [available here](https://github.com/andersensam/mnist-neural-network-c). The original repo includes references, inspriations, and design philosophy.
 
 ### A Note on EMNIST
 
 The original MNIST dataset is relatively small and contains only digits. As the [EMNIST (Extended MNIST)](https://www.nist.gov/itl/products-and-services/emnist-dataset) dataset is available in the same binary format as the Yann LeCun MNIST dataset (linked above), we can simply point to the EMNIST datasets' labels and images to train / run inference on them.
 
-If using the digits dataset, there are no changes needed; **however**, to add in letters, `include/MNIST_Labels.h` needs to be modified. The line here must be adjusted:
+If using the digits dataset, there are no changes needed; **however**, to add in letters, `include/MNIST_Utils.hpp` needs to be modified. The line here must be adjusted:
 
 ```
 #define MNIST_LABELS 10
@@ -42,9 +24,14 @@ No other changes are required beyond the above.
 
 ## Compilation
 
-To build the neural network, simply use `make`. By default, this will compile with `-O3`
+To build the neural network, simply use `cmake`. By default, this will compile with `-O3`
 
-To disable optimizations and compile with debug symbols, use `make debug`
+Generally:
+```
+mkdir build
+cd build && cmake ..
+./mnist-neural-network [options here]
+```
 
 ## Using the Neural Network
 
@@ -61,29 +48,48 @@ The main binary has three options available (with suboptions for train and predi
 As noted above, the first option is to train a new neural network from scratch. To get started, examine the following syntax:
 
 ```
-./target/main train <path to labels> <path to images> <learning rate> <use biases> <number of layers> <[neurons in each layer]> <images to train on> <epochs> <model name>
+./mnist-neural-network online-training --layers=[comma separated layers] --learning_rate=[float value] \
+    --lambda=[float value] --cost_function=[quadratic | cross_entropy] --num_train=[int value] --epochs=[int value] \
+    --dataset_path=[path to training dataset] --labels_path=[path to training labels] \
+    --model_path=[path to write model to]
 ```
 
 A complete example is listed below:
 ```
-./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
+./mnist-neural-network online-training --layers=784,100,10 --learning_rate=0.1 \
+    --lambda=0.1 --cost_function=quadratic --num_train=3000 --epochs=1 \
+    --dataset_path=../data/train-images-idx3-ubyte --labels_path=../data/train-labels-idx1-ubyte \
+    --model_path=../models/test.model
 ```
 
-The example reveals that: we want to train a new model, using a **learning rate** of 0.1, we want to use biases, there are **3** total layers (including input). The first layer has 784 neurons, the second has 100, and the output has 10. We want to train on a subset of 1500 images and we want to export the model to file `small_100.model`.
+The example reveals that: we want to train a new model, using a **learning rate** of 0.1, there are **3** total layers (including input). The first layer has 784 neurons, the second has 100, and the output has 10. We want to train on a subset of 3000 images and we want to export the model to file `test.model`.
 
 Running the example above produces the following output:
 
 ```
-$ ./target/main train data/train-labels-idx1-ubyte data/train-images-idx3-ubyte 0.1 true 3 784 100 10 1500 2 small_100.model
+$ ./mnist-neural-network online-training --layers=784,100,10 --learning_rate=0.1 \
+    --lambda=0.1 --cost_function=quadratic --num_train=3000 --epochs=1 \
+    --dataset_path=../data/train-images-idx3-ubyte --labels_path=../data/train-labels-idx1-ubyte \
+    --model_path=../models/test.model
 
-[2024-09-18 23:32:59]: Starting to load MNIST labels
-[2024-09-18 23:32:59]: Finished loading MNIST labels
-[2024-09-18 23:32:59]: Starting to load MNIST images
-[2024-09-18 23:33:00]: Finished loading MNIST images
-[2024-09-18 23:33:00]: Starting model training
-[2024-09-18 23:33:00]: Finished model training
-[2024-09-18 23:33:00]: Saving model
-[2024-09-18 23:33:00]: Finished saving model
+2025-10-10 10:55:38: [INFO] - <main::main>: Starting up... options provided:
+online-training
+--layers=784,100,10
+--learning_rate=0.1
+--lambda=0.1
+--cost_function=quadratic
+--num_train=3000
+--epochs=1
+--dataset_path=../data/train-images-idx3-ubyte
+--labels_path=../data/train-labels-idx1-ubyte
+--model_path=../models/test.model
+2025-10-10 10:55:38: [INFO] - <main::main>: Online training mode selected. Checking trainer config...
+2025-10-10 10:55:38: [INFO] - <main::main>: Trainer config validated. Starting training loop...
+2025-10-10 10:55:38: [INFO] - <MNIST_Images::MNIST_Images>: Reading 60000 images
+2025-10-10 10:55:40: [INFO] - <MNIST_Labels::MNIST_Labels>: Reading 60000 labels
+2025-10-10 10:55:40: [INFO] - <train_new_model_online>: Online trainer epoch 0 step 0 loss=2.880098
+2025-10-10 10:55:41: [INFO] - <train_new_model_online>: Online trainer epoch 0 step 100 loss=0.004494261
+2025-10-10 10:55:41: [INFO] - <train_new_model_online>: Online trainer epoch 0 step 200 loss=0.0021419716
 ```
 
 ### (Mini)batch Training of the Neural Network

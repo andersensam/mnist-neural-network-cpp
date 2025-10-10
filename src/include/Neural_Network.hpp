@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-22
+ * @version: 2025-10-09
  *
  * General Notes:
  *
@@ -150,6 +150,12 @@ public:
      * Constructor for making a copy of a Neural_Network
      */
     Neural_Network();
+
+    /**
+     * Constructor for loading a Neural_Network from a saved file
+     * @param path Path to the saved Neural_Network
+     */
+    Neural_Network(const char* patch);
 
     /**
      * Constructor for loading a Neural_Network from a file

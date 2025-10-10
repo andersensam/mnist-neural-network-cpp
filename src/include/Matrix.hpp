@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-19
+ * @version: 2025-10-09
  *
  * General Notes:
  *
@@ -23,8 +23,8 @@
 
 /* Standard dependencies */
 #include <iostream>
-#include <string.h>
-#include <math.h>
+#include <cstring>
+#include <cmath>
 
 /* Local dependencies */
 #include "Log.hpp"
@@ -245,7 +245,7 @@ public:
         m_num_rows = num_rows;
         m_num_cols = num_cols;
         /* Allocate memory for data storage */
-        m_data = (Matrix_Type*)calloc(num_rows * num_cols, sizeof(Matrix_Type));
+        m_data = static_cast<Matrix_Type*>(calloc(num_rows * num_cols, sizeof(Matrix_Type)));
         /* Zero out the memory manually, to be safe */
         memset(m_data, '\0', num_cols * num_rows * sizeof(Matrix_Type));
     }
@@ -646,6 +646,15 @@ public:
     }
 
     /**
+     * Add two Matrix instances together, storing the result in a new Matrix
+     * @param target Matrix to add
+     * @returns Returns a pointer to a new Matrix with the result
+     */
+    Matrix<Matrix_Type>* operator+(const Matrix<Matrix_Type>& target) const {
+        return add(target);
+    }
+
+    /**
      * Add two Matrix instances together, storing in a specified destination
      * @param target Matrix to add
      * @param destination Destination Matrix to store the result
@@ -675,7 +684,16 @@ public:
         element_op(target, Element_Operations::ADD);
     }
 
-     /**
+    /**
+     * Add two Matrix instances together, overwriting the calling Matrix
+     * @param target Matrix to add
+     */
+    Matrix& operator+=(const Matrix<Matrix_Type>& target) {
+        add_o(target);
+        return *this;
+    }
+
+    /**
      * Subtract two Matrix instances together
      * @param target Matrix to subtract with
      * @returns Returns a pointer to a new Matrix with the subtraction
@@ -688,6 +706,15 @@ public:
         Matrix<Matrix_Type>* result = new Matrix<Matrix_Type>(rows(), cols());
         subtract(target, *result);
         return result;
+    }
+
+    /**
+     * Subtract two Matrix instances together
+     * @param target Matrix to subtract with
+     * @returns Returns a pointer to a new Matrix with the subtraction
+     */
+    Matrix<Matrix_Type>* operator-(const Matrix<Matrix_Type>& target) const {
+        return subtract(target);
     }
 
     /**
@@ -721,6 +748,15 @@ public:
     }
 
     /**
+     * Subtract two Matrix instances together, overwriting the calling Matrix
+     * @param target Matrix to subtract
+     */
+    Matrix& operator-=(const Matrix<Matrix_Type>& target) {
+        subtract_o(target);
+        return *this;
+    }
+
+    /**
      * Multiply two Matrix instances together
      * @param target Matrix to multiply with
      * @returns Returns a pointer to a new Matrix with the multiplication
@@ -733,6 +769,15 @@ public:
         Matrix<Matrix_Type>* result = new Matrix<Matrix_Type>(rows(), cols());
         multiply(target, *result);
         return result;
+    }
+
+    /**
+     * Multiply two Matrix instances together
+     * @param target Matrix to multiply with
+     * @returns Returns a pointer to a new Matrix with the multiplication
+     */
+    Matrix<Matrix_Type>* operator*(const Matrix<Matrix_Type>& target) const {
+        return multiply(target);
     }
 
     /**
@@ -763,6 +808,15 @@ public:
             exit(EXIT_FAILURE);
         }
         element_op(target, Element_Operations::MULTIPLY);
+    }
+
+    /**
+     * Multiply two Matrix instances together, overwriting the calling Matrix
+     * @param target Matrix to multiply with
+     */
+    Matrix& operator*=(const Matrix<Matrix_Type>& target){
+        multiply_o(target);
+        return *this;
     }
 
     /**

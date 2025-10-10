@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-22
+ * @version: 2025-10-09
  *
  * General Notes:
  *
@@ -49,14 +49,14 @@ void Quadratic_Cost::delta(const Matrix& z, const Matrix& output, const Matrix& 
     sigmoid_prime(z, sp);
 
     // Multiply the difference between (label - output) * sigmoid_prime
-    destination.multiply_o(sp);
+   destination *= sp;
 }
 
 float Cross_Entropy_Cost::cost(const Matrix& output, const Matrix& expected) {
 
     Matrix output_log = Matrix(output.rows(), output.cols());
     output.apply(log10, output_log);
-    output_log.multiply_o(expected);
+    output_log *= expected;
 
     return (-1.0f) * output_log.sum();
 }
@@ -89,7 +89,7 @@ void Neural_Network::training_inference(const Matrix& input) {
             m_layers[i]->get_const(Layer_Type::WEIGHTS).dot(input, hidden_inputs);
 
             // Add the bias before proceeding
-            hidden_inputs.add_o(m_layers[i]->get_const(Layer_Type::BIASES));
+            hidden_inputs += m_layers[i]->get_const(Layer_Type::BIASES);
 
             // Save the output before applying the activation function
             m_layers[i]->write_matrix(hidden_inputs, Layer_Type::Z);
@@ -108,7 +108,7 @@ void Neural_Network::training_inference(const Matrix& input) {
             m_layers[i]->get_const(Layer_Type::WEIGHTS).dot(
                 m_layers[i - 1]->get_const(Layer_Type::OUTPUTS), hidden_inputs);
                 
-            hidden_inputs.add_o(m_layers[i]->get_const(Layer_Type::BIASES));
+            hidden_inputs += m_layers[i]->get_const(Layer_Type::BIASES);
             m_layers[i]->write_matrix(hidden_inputs, Layer_Type::Z);
             hidden_inputs.apply_o(sigmoid);
             m_layers[i]->write_matrix(hidden_inputs, Layer_Type::OUTPUTS);
@@ -138,7 +138,7 @@ Neural_Network::Neural_Network(const std::vector<size_t>& layer_info, float lear
     m_cost_type = cost_type;
     
     // Allocate memory for the layers
-    m_layers = (Neural_Network_Layer**)(calloc(m_num_layers, sizeof(Neural_Network_Layer*)));
+    m_layers = static_cast<Neural_Network_Layer**>(calloc(m_num_layers, sizeof(Neural_Network_Layer*)));
     if (m_layers == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
             "Unable to allocate memory for layers. Exiting now...");
@@ -156,6 +156,238 @@ Neural_Network::Neural_Network(const std::vector<size_t>& layer_info, float lear
 }
 
 Neural_Network::Neural_Network() {}
+
+Neural_Network::Neural_Network(const char* path) {
+
+    // Open the path to where the model is stored, in read-only mode
+    FILE* model_file = fopen(path, "ro");
+
+    if (model_file == NULL) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            std::format("Unable to open path '{}' to model. Exiting...", path));
+        exit(EXIT_FAILURE);
+    }
+
+    // Set up a place to read in uint32_t from the model file
+    uint32_t current_val = 0;
+
+    // Read in the magic number from the model file
+    if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read magic number from model");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    // We don't worry about endianness since it is assumed that the model likely came
+    // from the machine we're running on
+    if (current_val != NN_HEADER_MAGIC) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Mismatched magic number in the model header");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    if (fread(&m_learning_rate, sizeof(float), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read in learning rate");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    if (fread(&m_lambda, sizeof(float), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read in lambda");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read in the Cost Function as uint32_t and then perform the conversion later
+    if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read in cost function");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+    m_cost_type = static_cast<Cost_Function>(current_val);
+
+    if (fread(&m_num_layers, sizeof(size_t), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read in number of layers");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read in the number of layers
+    size_t* layer_info = static_cast<size_t*>(calloc(m_num_layers, sizeof(size_t)));
+    if (fread(layer_info, sizeof(size_t), m_num_layers, model_file) != m_num_layers) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read layer info");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate memory for the layers
+    m_layers = static_cast<Neural_Network_Layer**>(calloc(m_num_layers, sizeof(Neural_Network_Layer*)));
+    if (m_layers == NULL) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to allocate memory for layers. Exiting now...");
+        exit(EXIT_FAILURE);
+    }
+
+    // Handle the first layer differently
+    m_layers[0] = new Neural_Network_Layer(layer_info[0], 0, false, true);
+
+    // For the remaining layers, iterate over layer_info, pulling the number of neurons and the previous
+    // layer's neurons too
+    for (size_t i = 1; i < m_num_layers; ++i) {
+        m_layers[i] = new Neural_Network_Layer(layer_info[i], layer_info[i - 1], false, true);
+    }
+
+    if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read magic number for weights");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    if (current_val != NN_WEIGHTS_MAGIC) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Invalid magic number for weights");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Iterate over the layers, reading in the weights
+    for (size_t i = 1; i < m_num_layers; ++i) {
+
+        if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to read start of weights");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (current_val != NN_WEIGHT_BEGIN) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Invalid magic number for beginning of weights");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Get the 'flattened' size of the layer's weight Matrix
+        size_t layer_size = m_layers[i]->get_num_neurons() * m_layers[i]->get_previous_layer_num_neurons();
+        float* current_weights = static_cast<float*>(calloc(layer_size, sizeof(float)));
+
+        if (current_weights == NULL) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to allocate memory to read in weights");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (fread(current_weights, sizeof(float), layer_size, model_file) != layer_size) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to read weights.");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to read end of weights");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (current_val != NN_WEIGHT_END) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Invalid end of weights value");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        Matrix current_layer = Matrix(m_layers[i]->get_num_neurons(), m_layers[i]->get_previous_layer_num_neurons());
+
+        for (size_t j = 0; j < current_layer.rows(); ++j) {
+            for (size_t k = 0; k < current_layer.cols(); ++k) {
+                current_layer.set(j, k, current_weights[(j * current_layer.cols()) + k]);
+            }
+        }
+
+        m_layers[i]->write_matrix(current_layer, Layer_Type::WEIGHTS);
+
+        free(current_weights);
+    }
+
+    if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+            "Unable to read in bias magic number");
+        fclose(model_file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Iterate over the layers and read in the biases
+    for (size_t i = 1; i < m_num_layers; ++i) {
+
+        if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to read beginning of biases");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (current_val != NN_BIAS_BEGIN) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Invalid start of bias");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        size_t neurons = m_layers[i]->get_num_neurons();
+        float* current_biases = static_cast<float*>(calloc(neurons, sizeof(float)));
+
+        if (current_biases == NULL) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to allocate mmeory for biases");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (fread(current_biases, sizeof(float), neurons, model_file) != neurons) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to read in biases");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (fread(&current_val, sizeof(uint32_t), 1, model_file) != 1) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Unable to read end of biases");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        if (current_val != NN_BIAS_END) {
+            Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::Neural_Network",
+                "Invalid end of biases detected");
+            fclose(model_file);
+            exit(EXIT_FAILURE);
+        }
+
+        Matrix current_layer = Matrix(m_layers[i]->get_num_neurons(), 1);
+
+        for (size_t j = 0; j < neurons; ++j) {
+            current_layer.set(j, 0, current_biases[j]);
+        }
+
+        m_layers[i]->write_matrix(current_layer, Layer_Type::BIASES);
+        free(current_biases);
+    }
+
+    free(layer_info);
+    fclose(model_file);
+}
 
 Neural_Network::~Neural_Network() {
 
@@ -231,7 +463,7 @@ float Neural_Network::train(const Matrix& input, const Matrix& label, size_t dat
             // Calculate the error for this layer
             Matrix error = Matrix(nw_t.rows(), prev_error.cols());
             nw_t.dot(prev_error, error);
-            error.multiply_o(sp);
+            error *= sp;
 
             // Persist the new error
             m_layers[i]->write_matrix(error, Layer_Type::ERRORS);
@@ -264,12 +496,12 @@ float Neural_Network::train(const Matrix& input, const Matrix& label, size_t dat
         // Scale the new weights by the learning rate
         nw.scale_o(m_learning_rate);
         // Add the scaled new weights to the current weights
-        weights.add_o(nw);
+        weights += nw;
 
         // Scale the new biases by the learning rate
         error.scale_o(m_learning_rate);
         // Add the scaled new biases to the current biases
-        biases.add_o(error);
+        biases += error;
     }
 
     return total_loss;
@@ -295,8 +527,8 @@ float Neural_Network::batch_train(const Matrix& inputs, const Matrix& labels, si
     }
 
     // Setup our nablas, one for each layer except for the input layer
-    Matrix** nabla_w = (Matrix**)calloc(m_num_layers - 1, sizeof(Matrix*));
-    Matrix** nabla_b = (Matrix**)calloc(m_num_layers - 1, sizeof(Matrix*));
+    Matrix** nabla_w = static_cast<Matrix**>(calloc(m_num_layers - 1, sizeof(Matrix*)));
+    Matrix** nabla_b = static_cast<Matrix**>(calloc(m_num_layers - 1, sizeof(Matrix*)));
 
     if (nabla_w == NULL || nabla_b == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::batch_train",
@@ -364,7 +596,7 @@ float Neural_Network::batch_train(const Matrix& inputs, const Matrix& labels, si
             // Calculate the error for this layer
             Matrix error = Matrix(nw_t.rows(), prev_error.cols());
             nw_t.dot(prev_error, error);
-            error.multiply_o(sp);
+            error *= sp;
 
             // Persist the new error
             m_layers[i]->write_matrix(error, Layer_Type::ERRORS);
@@ -440,7 +672,7 @@ void Neural_Network::inference(const Matrix& input, Matrix& destination) const {
     }
 
     // Use m_num_layers - 1 since the first layer's output is the actual input
-    Matrix** outputs = (Matrix**)calloc(m_num_layers - 1, sizeof(Matrix*));
+    Matrix** outputs = static_cast<Matrix**>(calloc(m_num_layers - 1, sizeof(Matrix*)));
 
     if (outputs == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::inference",
@@ -480,7 +712,7 @@ Neural_Network* Neural_Network::clone(void) {
     target->m_num_layers = m_num_layers;
     target->m_learning_rate = m_learning_rate;
     target->m_lambda = m_lambda;
-    target->m_layers = (Neural_Network_Layer**)calloc(m_num_layers, sizeof(Neural_Network_Layer*));
+    target->m_layers = static_cast<Neural_Network_Layer**>(calloc(m_num_layers, sizeof(Neural_Network_Layer*)));
 
     if (target->m_layers == NULL) {
         Log::log_message(Log::Log_Priority::ERROR, "Nerual_Network::clone",
@@ -524,7 +756,7 @@ void Neural_Network::save(const char* path) const {
     // Write the lambda of the model
     fwrite(&(m_lambda), sizeof(float), 1, model);
     // Write the cost function type
-    uint32_t cost_type = (uint32_t)m_cost_type;
+    uint32_t cost_type = static_cast<uint32_t>(m_cost_type);
     fwrite(&cost_type, sizeof(uint32_t), 1, model);
 
     // Write the number of layers
@@ -569,7 +801,7 @@ void Neural_Network::save(const char* path) const {
     // Iterate over the layers, ignoring the input layer since it has no weights or biases
     for (size_t i = 1; i < m_num_layers; ++i) {
 
-        // Signal the beginning of a weights Matrix
+        // Signal the beginning of a bias Matrix
         fwrite(&bias_begin, sizeof(uint32_t), 1, model);
         const Matrix& biases = m_layers[i]->get_const(Layer_Type::BIASES);
 
@@ -578,7 +810,7 @@ void Neural_Network::save(const char* path) const {
             current_value = biases.get(j, 0);
             fwrite(&current_value, sizeof(float), 1, model);
         }
-        // Signal the end of a weights Matrix
+        // Signal the end of a bias Matrix
         fwrite(&bias_end, sizeof(uint32_t), 1, model);
     }
 
@@ -645,8 +877,8 @@ void Neural_Network_NS::sigmoid_prime(const Matrix& target, Matrix& destination)
 
     // Subtract the sigmoid from a Matrix of all ones
     destination.populate(1.0);
-    destination.subtract_o(t_sigmoid);
+    destination -= t_sigmoid;
 
     // Multiply the sigmoid by (1 - sigmoid)
-    destination.multiply_o(t_sigmoid);
+    destination *= t_sigmoid;
 }

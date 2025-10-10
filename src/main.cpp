@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-02
+ * @version: 2025-10-09
  *
  * General Notes:
  *
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-    Log::log_message(Log::Log_Priority::WARNING, "main::main", "Hello");
+    Log::log_message(Log::Log_Priority::INFO, "main::main", "Starting up... options provided:");
 
     for (int i = 1; i < argc; ++i) {
         std::cout << argv[i] << "\n";
@@ -36,20 +36,41 @@ int main(int argc, char* argv[]) {
     const std::string& command = std::string(argv[1]);
     Model_Config_NS::Model_Config config = {};
 
-    if (command == "train") {
-        Log::log_message(Log::Log_Priority::INFO, "main::main", "Training mode selected. Checking trainer config...");
+    if (command == "online-training") {
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Online training mode selected. Checking trainer config...");
         for (int i = 2; i < argc; ++i) {
             Model_Config_NS::parse_flag(argv[i], config);
         }
-        if (!Model_Config_NS::check_training_config(config)) {
+        if (!Model_Config_NS::check_online_training_config(config)) {
             Log::log_message(Log::Log_Priority::ERROR, "main::main", "Trainer config incomplete. Please provide a valid config.");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         Log::log_message(Log::Log_Priority::INFO, "main::main", "Trainer config validated. Starting training loop...");
-        MNIST_Training_NS::train_new_model(config);
+        MNIST_Training_NS::train_new_model_online(config);
+    }
+    else if (command == "batch-training") {
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Batch training mode selected. Checking trainer config...");
+        for (int i = 2; i < argc; ++i) {
+            Model_Config_NS::parse_flag(argv[i], config);
+        }
+        if (!Model_Config_NS::check_batch_training_config(config)) {
+            Log::log_message(Log::Log_Priority::ERROR, "main::main", "Trainer config incomplete. Please provide a valid config.");
+            exit(EXIT_FAILURE);
+        }
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Trainer config validated. Starting training loop...");
+        MNIST_Training_NS::train_new_model_batch(config);
     }
     else if (command == "inference") {
-        std::cout << "inf\n";
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Inference mode selected. Loading model...");
+        for (int i = 2; i < argc; ++i) {
+            Model_Config_NS::parse_flag(argv[i], config);
+        }
+        if (!Model_Config_NS::check_inference_config(config)) {
+            Log::log_message(Log::Log_Priority::ERROR, "main::main", "Inference config incomplete. Please provide a valid config.");
+            exit(EXIT_FAILURE);
+        }
+        Log::log_message(Log::Log_Priority::INFO, "main::main", "Inference config validated. Starting inference loop...");
+        MNIST_Inference_NS::inference(config);
     }
     else if (command == "help") {
         std::cout << "Help\n";

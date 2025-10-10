@@ -14,15 +14,19 @@ add_library(Neural_Network_Layer ../src/Neural_Network_Layer.cpp)
 add_library(Neural_Network ../src/Neural_Network.cpp)
 add_library(MNIST_Utils ../src/MNIST_Utils.cpp)
 add_library(MNIST_Training ../src/MNIST_Training.cpp)
+add_library(MNIST_Inference ../src/MNIST_Inference.cpp)
 add_library(Model_Config ../src/Model_Config.cpp)
 
 target_link_libraries(Neural_Network Neural_Network_Layer)
 target_link_libraries(MNIST_Training MNIST_Utils)
 target_link_libraries(MNIST_Training Neural_Network)
+target_link_libraries(MNIST_Inference MNIST_Utils)
+target_link_libraries(MNIST_Inference Neural_Network)
  
 add_executable(mnist-neural-network
     ../src/main.cpp)
 
 target_link_libraries(mnist-neural-network Log)
 target_link_libraries(mnist-neural-network MNIST_Training)
+target_link_libraries(mnist-neural-network MNIST_Inference)
 target_link_libraries(mnist-neural-network Model_Config)
