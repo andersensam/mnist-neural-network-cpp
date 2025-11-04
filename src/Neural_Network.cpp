@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-09
+ * @version: 2025-11-03
  *
  * General Notes:
  *
@@ -715,7 +715,7 @@ Neural_Network* Neural_Network::clone(void) {
     target->m_layers = static_cast<Neural_Network_Layer**>(calloc(m_num_layers, sizeof(Neural_Network_Layer*)));
 
     if (target->m_layers == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "Nerual_Network::clone",
+        Log::log_message(Log::Log_Priority::ERROR, "Neural_Network::clone",
             "Error allocating memory for m_layers");
         exit(EXIT_FAILURE);
     }

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-09
+ * @version: 2025-11-03
  *
  * General Notes:
  *
@@ -77,6 +77,7 @@ int main(int argc, char* argv[]) {
     }
     else {
         std::cerr << "Invalid command provided\n";
+        exit(EXIT_FAILURE);
     }
 
     return 0;

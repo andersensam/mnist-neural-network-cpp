@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-09
+ * @version: 2025-10-16
  *
  * General Notes:
  *
@@ -28,7 +28,7 @@ void MNIST_Training_NS::train_new_model_online(const Model_Config_NS::Model_Conf
     MNIST_Labels labels = MNIST_Labels(config.labels_path);
 
     if (config.layer_info.size() == 0) {
-        Log::log_message(Log::Log_Priority::ERROR, "train_new_model",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::train_new_model",
             "Invalid layer_info vector provided");
         return;
     }
@@ -63,7 +63,7 @@ void MNIST_Training_NS::train_new_model_online(const Model_Config_NS::Model_Conf
 
             if (MNIST_TRAINING_SHOW_LOSS) {
                 if (j % MNIST_TRAINING_SHOW_LOSS_STEPS == 0) {
-                    Log::log_message(Log::Log_Priority::INFO, "train_new_model_online",
+                    Log::log_message(Log::Log_Priority::INFO, "MNIST_Training::train_new_model_online",
                         std::format("Online trainer epoch {} step {} loss={}", i, current_step, loss));
                 }
             }
@@ -72,6 +72,9 @@ void MNIST_Training_NS::train_new_model_online(const Model_Config_NS::Model_Conf
         }
         free(shuffled_index);
     }
+
+    Log::log_message(Log::Log_Priority::INFO, "MNIST_Training::train_new_model_online",
+            "Finished training model. Saving...");
     nn.save(config.model_path.c_str());
 }
 
@@ -81,7 +84,7 @@ void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Confi
     MNIST_Labels labels = MNIST_Labels(config.labels_path);
 
     if (config.layer_info.size() == 0) {
-        Log::log_message(Log::Log_Priority::ERROR, "train_new_model",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::train_new_model",
             "Invalid layer_info vector provided");
         return;
     }
@@ -133,7 +136,7 @@ void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Confi
 
             if (MNIST_TRAINING_SHOW_LOSS) {
                 if (j % MNIST_TRAINING_SHOW_LOSS_STEPS == 0) {
-                    Log::log_message(Log::Log_Priority::INFO, "train_new_model_batch",
+                    Log::log_message(Log::Log_Priority::INFO, "MNIST_Training::train_new_model_batch",
                         std::format("Batch trainer epoch {} step {} loss={}", i, current_step, loss));
                 }
             }
@@ -142,13 +145,16 @@ void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Confi
         }
         free(shuffled_index);
     }
+
+    Log::log_message(Log::Log_Priority::INFO, "MNIST_Training::train_new_model_batch",
+            "Finished training model. Saving...");
     nn.save(config.model_path.c_str());
 }
 
 void MNIST_Training_NS::shuffle(size_t* index, size_t elements) {
 
     if (index == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "shuffle",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::shuffle",
             "Invalid index array provided");
         exit(EXIT_FAILURE);
     }
@@ -170,7 +176,7 @@ size_t* MNIST_Training_NS::create_index_array(size_t elements) {
     size_t* target = static_cast<size_t*>(calloc(elements, sizeof(size_t)));
 
     if (target == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "create_index_array",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::create_index_array",
             "Unable to allocate memory for the index array");
         exit(EXIT_FAILURE);
     }
