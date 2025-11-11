@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-09
+ * @version: 2025-11-10
  *
  * General Notes:
  *
@@ -77,10 +77,10 @@ MNIST_Images::MNIST_Images(const std::string& path) {
     }
 
     // Validate the image size matches what we are expecting
-    if (map_uint32(image_buffer[2]) != MNIST_IMAGE_HEIGHT || map_uint32(image_buffer[3]) != MNIST_IMAGE_WIDTH) {
+    if (map_uint32(image_buffer[2]) != c_mnist_image_height || map_uint32(image_buffer[3]) != c_mnist_image_width) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::MNIST_Images",
             std::format("Unexpected image dimensions provided. Check MNIST_Utils.hpp. Detected [{} x {}] but expected [{} x {}]",
-                map_uint32(image_buffer[2]), map_uint32(image_buffer[3]), MNIST_IMAGE_HEIGHT, MNIST_IMAGE_WIDTH));
+                map_uint32(image_buffer[2]), map_uint32(image_buffer[3]), c_mnist_image_height, c_mnist_image_width));
         fclose(images_file);
         exit(EXIT_FAILURE);
     }
@@ -106,11 +106,11 @@ MNIST_Images::MNIST_Images(const std::string& path) {
     for (uint32_t i = 0; i < m_num_images; ++i) {
 
         // For each expected image, create a new Matrix to store it in
-        m_images[i] = new Matrix(MNIST_IMAGE_HEIGHT, MNIST_IMAGE_WIDTH);
+        m_images[i] = new Matrix(c_mnist_image_height, c_mnist_image_width);
 
         // For each expected pixel, grab the value and store it in the Matrix
-        for (size_t j = 0; j < MNIST_IMAGE_HEIGHT; ++j) {
-            for (size_t k = 0; k < MNIST_IMAGE_WIDTH; ++k) {
+        for (size_t j = 0; j < c_mnist_image_height; ++j) {
+            for (size_t k = 0; k < c_mnist_image_width; ++k) {
                 if (fread(&pixel_value, sizeof(uint8_t), 1, images_file) != 1) {
                     Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::MNIST_Images",
                         "Failed to read pixel data");
@@ -176,7 +176,7 @@ Matrix* MNIST_Images::get_flat(size_t index) const {
         exit(EXIT_FAILURE);
     }
 
-    Matrix* result = new Matrix(MNIST_IMAGE_SIZE, 1);
+    Matrix* result = new Matrix(c_mnist_image_size, 1);
     get_flat(index, *result);
     return result;
 }
@@ -188,7 +188,7 @@ void MNIST_Images::get_flat(size_t index, Matrix& destination) const {
             "Invalid index provided. Exiting");
         exit(EXIT_FAILURE);
     }
-    if (destination.rows() * destination.cols() != MNIST_IMAGE_SIZE) {
+    if (destination.rows() * destination.cols() != c_mnist_image_size) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::get_flat",
             "Incorrect destination Matrix size");
         exit(EXIT_FAILURE);
@@ -216,7 +216,7 @@ Matrix* MNIST_Images::create_images_from_range(size_t image_start, size_t image_
     }
 
     // Allocate the new Matrix for the flat images
-    Matrix* result = new Matrix(MNIST_IMAGE_SIZE, image_end - image_start);
+    Matrix* result = new Matrix(c_mnist_image_size, image_end - image_start);
     create_images_from_range(image_start, image_end, *result);
     return result;
 }
@@ -246,16 +246,16 @@ void MNIST_Images::create_images_from_range(size_t image_start, size_t image_end
         if (MNIST_UTILS_DEBUG){ 
             Log::log_message(Log::Log_Priority::ERROR, "MNIST_Images::create_images_from_range",
                 std::format("Destination Matrix size [{} x {}] but should be [{} x {}]",
-                    destination.rows(), destination.cols(), MNIST_IMAGE_SIZE, target_num_images));
+                    destination.rows(), destination.cols(), c_mnist_image_size, target_num_images));
         }
         exit(EXIT_FAILURE);
     }
 
     // Iterate over the image Matrix instances and put into one giant Matrix
     for (size_t i = 0; i < target_num_images; ++i) {
-        for (size_t j = 0; j < MNIST_IMAGE_HEIGHT; ++j) {
-            for (size_t k = 0; k < MNIST_IMAGE_WIDTH; ++k) {
-                destination.set((j * MNIST_IMAGE_WIDTH) + k, i, m_images[image_start + i]->get(j, k));
+        for (size_t j = 0; j < c_mnist_image_height; ++j) {
+            for (size_t k = 0; k < c_mnist_image_width; ++k) {
+                destination.set((j * c_mnist_image_width) + k, i, m_images[image_start + i]->get(j, k));
             }
         }
     }
@@ -281,16 +281,15 @@ bool MNIST_Labels::exists(size_t index) const {
     return true;
 }
 
-MNIST_Labels::MNIST_Labels(const std::string& path) {
-
+bool MNIST_Labels::load_labels(const std::string& path) {
     // Open the path to where the labels are stored, in read-only mode
     FILE* labels_file = fopen(path.c_str(), "ro");
 
     if (labels_file == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::load_labels",
             std::format("Unable to open path '{}' to MNIST labels. Exiting...",
                 path));
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // We want to read in two values at once here to avoid using fread twice
@@ -298,46 +297,65 @@ MNIST_Labels::MNIST_Labels(const std::string& path) {
 
     // Read in 8 bytes from the file, grabbing the magic number and number of items contained
     if (fread(&label_buffer, sizeof(uint32_t), 2, labels_file) != 2) {
-        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::load_labels",
             "Unable to read headers from MNIST label file");
         fclose(labels_file);
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // The first entry in the array is used for the magic number; the second is the number of items
     if (map_uint32(label_buffer[0]) != MNIST_LABEL_MAGIC) {
-        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::load_labels",
             "Mistmatched magic number in the MNIST label file header");
         fclose(labels_file);
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // Store the number of labels we are expecting
     m_num_labels = (size_t)map_uint32(label_buffer[1]);
     if (MNIST_UTILS_DEBUG) {
-        Log::log_message(Log::Log_Priority::INFO, "MNIST_Labels::MNIST_Labels",
+        Log::log_message(Log::Log_Priority::INFO, "MNIST_Labels::load_labels",
             std::format("Reading {} labels", m_num_labels));
     }
 
     // Allocate memory for storing the labels themselves
     m_labels = static_cast<uint8_t*>(calloc(m_num_labels, sizeof(uint8_t)));
     if (m_labels == NULL) {
-        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::load_labels",
             "Unable to allocate memory to store labels");
         fclose(labels_file);
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // Read in all the labels at once
     if (fread(m_labels, sizeof(uint8_t), m_num_labels, labels_file) != m_num_labels) {
-        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::load_labels",
             "Failed to read labels");
         fclose(labels_file);
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // Cleanup
     fclose(labels_file);
+    return true;
+}
+
+MNIST_Labels::MNIST_Labels(const std::string& path, size_t mnist_labels_override) : c_mnist_labels(mnist_labels_override) {
+    
+    if (!load_labels(path)) {
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+            "Unable to load labels. Exiting...");
+        exit(EXIT_FAILURE);
+    }
+}
+
+MNIST_Labels::MNIST_Labels(const std::string& path) {
+
+    if (!load_labels(path)) {
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Labels::MNIST_Labels",
+            "Unable to load labels. Exiting...");
+        exit(EXIT_FAILURE);
+    }
 }
 
 MNIST_Labels::~MNIST_Labels() {
@@ -378,7 +396,7 @@ Matrix* MNIST_Labels::create_label(size_t index) const {
         exit(EXIT_FAILURE);
     }
 
-    Matrix* result = new Matrix(MNIST_LABELS, 1);
+    Matrix* result = new Matrix(c_mnist_labels, 1);
     create_label(index, *result);
     return result;
 }
@@ -417,7 +435,7 @@ Matrix* MNIST_Labels::create_labels_from_range(size_t label_start, size_t label_
         exit(EXIT_FAILURE);
     }
 
-    Matrix* result = new Matrix(MNIST_LABELS, label_end - label_start);
+    Matrix* result = new Matrix(c_mnist_labels, label_end - label_start);
     create_labels_from_range(label_start, label_end, *result);
     return result;
 }

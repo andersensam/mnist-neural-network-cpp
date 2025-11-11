@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-02
+ * @version: 2025-11-10
  *
  * General Notes:
  *
@@ -24,13 +24,9 @@
 
 /* MNIST_Lables config */
 #define MNIST_LABEL_MAGIC 0x00000801
-#define MNIST_LABELS 10
 
 /* MNIST_Images config */
 #define MNIST_IMAGE_MAGIC 0x00000803
-#define MNIST_IMAGE_WIDTH 28
-#define MNIST_IMAGE_HEIGHT 28
-#define MNIST_IMAGE_SIZE MNIST_IMAGE_WIDTH * MNIST_IMAGE_HEIGHT
 
 /* Standard dependencies */
 #include <cstdint>
@@ -63,6 +59,11 @@ private:
     bool exists(size_t index) const;
 
 public:
+    /* Public data elements */
+    const size_t c_mnist_image_width = 28;
+    const size_t c_mnist_image_height = 28;
+    const size_t c_mnist_image_size = 28 * 28;
+
     /* Public functions */
 
     /**
@@ -137,7 +138,25 @@ private:
      */
     bool exists(size_t index) const;
 
+    /**
+     * Read data from (E)MNIST labels and store them inside an instance
+     * @param path Path to the file containing the (E)MNIST labels
+     * @returns True if the labels were loaded
+     */
+    bool load_labels(const std::string& path);
+    
+protected:
+    /**
+     * Protected constuctor for MNIST_Labels, overriding c_mnist_labels 
+     * @param path Path to the file containing the (E)MNIST labels
+     * @param mnist_labels_override Override for c_mnist_labels
+     */
+    MNIST_Labels(const std::string& path, size_t mnist_labels_override);
+
 public:
+    /* Public data elements */
+    const size_t c_mnist_labels = 10;
+
     /* Public functions */
 
     /**

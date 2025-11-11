@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-09
+ * @version: 2025-11-10
  *
  * General Notes:
  *
@@ -24,6 +24,7 @@
 #include "Log.hpp"
 #include "Matrix.hpp"
 #include "MNIST_Utils.hpp"
+#include "EMNIST_Utils.hpp"
 #include "Neural_Network.hpp"
 #include "Model_Config.hpp"
 

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-02
+ * @version: 2025-11-06
  *
  * General Notes:
  *
@@ -89,6 +89,10 @@ typedef struct Model_Config {
      * Path to write the model to after training (or read from)
      */
     std::string model_path = std::string();
+    /**
+     * Module to use, either MNIST or EMNIST
+     */
+    std::string module = std::string();
 } Model_Config;
 
 /**

@@ -28,6 +28,7 @@
 #include "Log.hpp"
 #include "Matrix.hpp"
 #include "MNIST_Utils.hpp"
+#include "EMNIST_Utils.hpp"
 #include "Neural_Network.hpp"
 #include "Model_Config.hpp"
 

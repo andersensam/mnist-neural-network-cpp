@@ -193,6 +193,10 @@ bool Model_Config_NS::parse_flag(const std::string& flag, Model_Config& config) 
         
         config.model_path = flag_value;
     }
+    else if (flag.find("--module=") != std::string::npos) {
+        
+        config.module = flag_value;
+    }
     return false;
 }
 
@@ -234,7 +238,8 @@ bool Model_Config_NS::check_online_training_config(Model_Config& config) {
         config.num_train > 0 &&
         !config.dataset_path.empty() &&
         !config.labels_path.empty() &&
-        !config.model_path.empty()) {
+        !config.model_path.empty() &&
+        !config.module.empty()) {
 
         // 2 is an invalid value for cost_function (default value)
         if (config.cost_function == 2) {
@@ -270,7 +275,8 @@ bool Model_Config_NS::check_batch_training_config(Model_Config& config) {
         config.batch_size > 0 &&
         !config.dataset_path.empty() &&
         !config.labels_path.empty() &&
-        !config.model_path.empty()) {
+        !config.model_path.empty() &&
+        !config.module.empty()) {
 
         // 2 is an invalid value for cost_function (default value)
         if (config.cost_function == 2) {
@@ -304,7 +310,8 @@ bool Model_Config_NS::check_inference_config(Model_Config& config) {
     if (config.num_inference > 0 &&
         !config.dataset_path.empty() &&
         !config.labels_path.empty() &&
-        !config.model_path.empty()) {
+        !config.model_path.empty() &&
+        !config.module.empty()) {
 
         return true;
     }

@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-10-16
+ * @version: 2025-11-06
  *
  * General Notes:
  *
@@ -21,11 +21,23 @@ using Matrix = Matrix_NS::Matrix<float>;
 using Neural_Network = Neural_Network_NS::Neural_Network;
 using MNIST_Images = MNIST_Utils_NS::MNIST_Images;
 using MNIST_Labels = MNIST_Utils_NS::MNIST_Labels;
+using EMNIST_Labels = EMNIST_Utils_NS::EMNIST_Labels;
 
 void MNIST_Training_NS::train_new_model_online(const Model_Config_NS::Model_Config& config) {
 
+    // MNIST_Images does not vary between MNIST and EMNIST datasets, so we can always initialize the same way
     MNIST_Images images = MNIST_Images(config.dataset_path);
-    MNIST_Labels labels = MNIST_Labels(config.labels_path);
+    
+    // MNIST_Labels does change, where c_mnist_labels = 10 by default and c_mnist_labels = 47 for EMNIST
+    MNIST_Labels* labels_ptr = EMNIST_Utils_NS::infer_labels_type_and_instantiate(config);
+
+    if (labels_ptr == NULL) {
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::train_new_model",
+            "Invalid MNIST_Labels pointer returned. Exiting");
+        exit(EXIT_FAILURE);
+    }
+
+    MNIST_Labels& labels = *labels_ptr;
 
     if (config.layer_info.size() == 0) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::train_new_model",
@@ -38,8 +50,8 @@ void MNIST_Training_NS::train_new_model_online(const Model_Config_NS::Model_Conf
         config.lambda, static_cast<Neural_Network_NS::Cost_Function>(config.cost_function));
 
     // Setup Matrix instances that will be reused for processing images and labels
-    Matrix current_image = Matrix(MNIST_IMAGE_SIZE, 1);
-    Matrix current_label = Matrix(MNIST_LABELS, 1);
+    Matrix current_image = Matrix(images.c_mnist_image_size, 1);
+    Matrix current_label = Matrix(labels.c_mnist_labels, 1);
 
     // Setup a shuffled array index
     size_t* shuffled_index = NULL;
@@ -76,12 +88,21 @@ void MNIST_Training_NS::train_new_model_online(const Model_Config_NS::Model_Conf
     Log::log_message(Log::Log_Priority::INFO, "MNIST_Training::train_new_model_online",
             "Finished training model. Saving...");
     nn.save(config.model_path.c_str());
+    delete labels_ptr;
 }
 
 void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Config& config) {
 
     MNIST_Images images = MNIST_Images(config.dataset_path);
-    MNIST_Labels labels = MNIST_Labels(config.labels_path);
+    MNIST_Labels* labels_ptr = EMNIST_Utils_NS::infer_labels_type_and_instantiate(config);
+
+    if (labels_ptr == NULL) {
+        Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::train_new_model",
+            "Invalid MNIST_Labels pointer returned. Exiting");
+        exit(EXIT_FAILURE);
+    }
+
+    MNIST_Labels& labels = *labels_ptr;
 
     if (config.layer_info.size() == 0) {
         Log::log_message(Log::Log_Priority::ERROR, "MNIST_Training::train_new_model",
@@ -94,8 +115,8 @@ void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Confi
         config.lambda, static_cast<Neural_Network_NS::Cost_Function>(config.cost_function));
 
     // Setup Matrix instances that will be reused for processing images and labels
-    Matrix current_images = Matrix(MNIST_IMAGE_SIZE, config.batch_size);
-    Matrix current_labels = Matrix(MNIST_LABELS, config.batch_size);
+    Matrix current_images = Matrix(images.c_mnist_image_size, config.batch_size);
+    Matrix current_labels = Matrix(labels.c_mnist_labels, config.batch_size);
 
     // Store information about the current batch and step number
     size_t steps_per_epoch = config.num_train / config.batch_size;
@@ -120,8 +141,8 @@ void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Confi
             if ((j == steps_per_epoch - 1) && (final_batch_size != 0)) {
 
                 // Ensure we capture whatever the oddly sized final batch has
-                Matrix final_images = Matrix(MNIST_IMAGE_SIZE, final_batch_size);
-                Matrix final_labels = Matrix(MNIST_LABELS, final_batch_size);
+                Matrix final_images = Matrix(images.c_mnist_image_size, final_batch_size);
+                Matrix final_labels = Matrix(labels.c_mnist_labels, final_batch_size);
 
                 images.create_images_from_range(config.num_train - final_batch_size - 1, config.num_train - 1, final_images);
                 labels.create_labels_from_range(config.num_train - final_batch_size - 1, config.num_train - 1, final_labels);
@@ -149,6 +170,7 @@ void MNIST_Training_NS::train_new_model_batch(const Model_Config_NS::Model_Confi
     Log::log_message(Log::Log_Priority::INFO, "MNIST_Training::train_new_model_batch",
             "Finished training model. Saving...");
     nn.save(config.model_path.c_str());
+    delete labels_ptr;
 }
 
 void MNIST_Training_NS::shuffle(size_t* index, size_t elements) {

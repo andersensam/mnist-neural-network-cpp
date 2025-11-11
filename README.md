@@ -8,19 +8,10 @@ This is a follow on to my original MNIST Neural Network in C, [available here](h
 
 The original MNIST dataset is relatively small and contains only digits. As the [EMNIST (Extended MNIST)](https://www.nist.gov/itl/products-and-services/emnist-dataset) dataset is available in the same binary format as the Yann LeCun MNIST dataset (linked above), we can simply point to the EMNIST datasets' labels and images to train / run inference on them.
 
-If using the digits dataset, there are no changes needed; **however**, to add in letters, `include/MNIST_Utils.hpp` needs to be modified. The line here must be adjusted:
-
+Using EMNIST requires the following option:
 ```
-#define MNIST_LABELS 10
+--module=emnist
 ```
-
-If using the EMIST balanced dataset, change to the following:
-
-```
-#define MNIST_LABELS 47
-```
-
-No other changes are required beyond the above.
 
 ## Compilation
 
@@ -51,7 +42,7 @@ As noted above, the first option is to train a new neural network from scratch. 
 ./mnist-neural-network online-training --layers=[comma separated layers] --learning_rate=[float value] \
     --lambda=[float value] --cost_function=[quadratic | cross_entropy] --num_train=[int value] --epochs=[int value] \
     --dataset_path=[path to training dataset] --labels_path=[path to training labels] \
-    --model_path=[path to write model to]
+    --model_path=[path to write model to] --module=[mnist | emnist]
 ```
 
 A complete example is listed below:
@@ -59,7 +50,7 @@ A complete example is listed below:
 ./mnist-neural-network online-training --layers=784,100,10 --learning_rate=0.1 \
     --lambda=0.1 --cost_function=quadratic --num_train=3000 --epochs=1 \
     --dataset_path=../data/train-images-idx3-ubyte --labels_path=../data/train-labels-idx1-ubyte \
-    --model_path=../models/test.model
+    --model_path=../models/test.model --module=mnist
 ```
 
 The example reveals that: we want to train a new model, using a **learning rate** of 0.1, there are **3** total layers (including input). The first layer has 784 neurons, the second has 100, and the output has 10. We want to train on a subset of 3000 images and we want to export the model to file `test.model`.
@@ -70,7 +61,7 @@ Running the example above produces the following output:
 $ ./mnist-neural-network online-training --layers=784,100,10 --learning_rate=0.1 \
     --lambda=0.1 --cost_function=quadratic --num_train=3000 --epochs=1 \
     --dataset_path=../data/train-images-idx3-ubyte --labels_path=../data/train-labels-idx1-ubyte \
-    --model_path=../models/test.model
+    --model_path=../models/test.model --module=mnist
 
 2025-10-10 10:55:38: [INFO] - <main::main>: Starting up... options provided:
 online-training
@@ -83,6 +74,7 @@ online-training
 --dataset_path=../data/train-images-idx3-ubyte
 --labels_path=../data/train-labels-idx1-ubyte
 --model_path=../models/test.model
+--module=mnist
 2025-10-10 10:55:38: [INFO] - <main::main>: Online training mode selected. Checking trainer config...
 2025-10-10 10:55:38: [INFO] - <main::main>: Trainer config validated. Starting training loop...
 2025-10-10 10:55:38: [INFO] - <MNIST_Images::MNIST_Images>: Reading 60000 images
@@ -101,7 +93,7 @@ Using (mini)batch, we can train the Neural Network with the following syntax:
     --lambda=[float value] --cost_function=[quadratic | cross_entropy] --num_train=[int value] --epochs=[int value] \
     --batch_size[int value] \
     --dataset_path=[path to training dataset] --labels_path=[path to training labels] \
-    --model_path=[path to write model to]
+    --model_path=[path to write model to] --module=[mnist | emnist]
 ```
 
 A complete example is listed below:
@@ -111,7 +103,7 @@ A complete example is listed below:
     --lambda=0.1 \--cost_function=cross_entropy --num_train=30000 --epochs=2 \
     --batch_size=4 \
     --dataset_path=../data/train-images-idx3-ubyte --labels_path=../data/train-labels-idx1-ubyte \
-     --model_path=../models/test.model 
+    --model_path=../models/test.model --module=mnist
 
 ```
 
@@ -123,7 +115,7 @@ Running the above results in:
 $ ./mnist-neural-network batch-training --layers=784,100,10 --learning_rate=0.1 --lambda=0.1 \
     --cost_function=cross_entropy --num_train=30000 --epochs=2 \
     --dataset_path=../data/train-images-idx3-ubyte --labels_path=../data/train-labels-idx1-ubyte \
-    --model_path=../models/test.model --batch_size=4
+    --model_path=../models/test.model --batch_size=4 --module=mnist
 
 2025-11-03 19:49:02: [INFO] - <main::main>: Starting up... options provided:
 batch-training
@@ -137,6 +129,7 @@ batch-training
 --labels_path=../data/train-labels-idx1-ubyte
 --model_path=../models/test.model
 --batch_size=4
+--module=mnist
 2025-11-03 19:49:02: [INFO] - <main::main>: Batch training mode selected. Checking trainer config...
 2025-11-03 19:49:02: [INFO] - <main::main>: Trainer config validated. Starting training loop...
 2025-11-03 19:49:02: [INFO] - <MNIST_Images::MNIST_Images>: Reading 60000 images
@@ -153,33 +146,36 @@ Running inference on a trained model follows a similar syntax:
 
 ```
 ./mnist-neural-network inference --num_inference=[int value] --model_path=[path to existing model] \
-    --dataset_path=[path to dataset] --labels_path=[path to labels]
+    --dataset_path=[path to dataset] --labels_path=[path to labels] --module=[mnist | emnist]
 ```
 
 An example is:
 
 ```
-./mnist-neural-network inference --num_inference=500 --model_path=../models/test.model \
-    --dataset_path=../data/t10k-images-idx3-ubyte --labels_path=../data/t10k-labels-idx1-ubyte
+./mnist-neural-network inference --num_inference=10000 --model_path=../models/emnist.model \
+    --dataset_path=../data/emnist-balanced-test-images-idx3-ubyte \
+    --labels_path=../data/emnist-balanced-test-labels-idx1-ubyte --module=emnist
 ```
 
 Executing the above results in:
 
 ```
-$ ./mnist-neural-network inference --num_inference=500 --model_path=../models/test.model \
-    --dataset_path=../data/t10k-images-idx3-ubyte --labels_path=../data/t10k-labels-idx1-ubyte
+$ ./mnist-neural-network inference --num_inference=10000 --model_path=../models/emnist.model \
+    --dataset_path=../data/emnist-balanced-test-images-idx3-ubyte \
+    --labels_path=../data/emnist-balanced-test-labels-idx1-ubyte --module=emnist
 
-2025-11-03 19:49:16: [INFO] - <main::main>: Starting up... options provided:
+2025-11-10 16:58:53: [INFO] - <main::main>: Starting up... options provided:
 inference
---num_inference=500
---model_path=../models/test.model
---dataset_path=../data/t10k-images-idx3-ubyte
---labels_path=../data/t10k-labels-idx1-ubyte
-2025-11-03 19:49:16: [INFO] - <main::main>: Inference mode selected. Loading model...
-2025-11-03 19:49:16: [INFO] - <main::main>: Inference config validated. Starting inference loop...
-2025-11-03 19:49:16: [INFO] - <MNIST_Images::MNIST_Images>: Reading 10000 images
-2025-11-03 19:49:16: [INFO] - <MNIST_Labels::MNIST_Labels>: Reading 10000 labels
-2025-11-03 19:49:16: [INFO] - <MNIST_Inference::inference>: Inference results: [474 / 500] correct. 94.8% accuracy rate.
+--num_inference=10000
+--model_path=../models/emnist.model
+--dataset_path=../data/emnist-balanced-test-images-idx3-ubyte
+--labels_path=../data/emnist-balanced-test-labels-idx1-ubyte
+--module=emnist
+2025-11-10 16:58:53: [INFO] - <main::main>: Inference mode selected. Loading model...
+2025-11-10 16:58:53: [INFO] - <main::main>: Inference config validated. Starting inference loop...
+2025-11-10 16:58:53: [INFO] - <MNIST_Images::MNIST_Images>: Reading 18800 images
+2025-11-10 16:58:54: [INFO] - <MNIST_Labels::load_labels>: Reading 18800 labels
+2025-11-10 16:58:56: [INFO] - <MNIST_Inference::inference>: Inference results: [7317 / 10000] correct. 73.17% accuracy rate.
 ```
 
 ### Multithreaded Inference

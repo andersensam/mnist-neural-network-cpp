@@ -8,27 +8,21 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-11-06
+ * @version: 2025-11-10
  *
  * General Notes:
  *
- * TODO: Continue adding functionality 
+ * TODO: Rewrite MNIST_Utils to be more C++-like. These utils are currently
+ * very C-like in style
  */
 
-#ifndef MAIN_HPP
-#define MAIN_HPP
+#include "include/EMNIST_Utils.hpp"
 
-/* Standard dependencies */
-#include <vector>
-#include <iostream>
-#include <sstream>
-#include <string>
+MNIST_Utils_NS::MNIST_Labels* EMNIST_Utils_NS::infer_labels_type_and_instantiate(const Model_Config_NS::Model_Config& config) {
 
-/* Local dependencies */
-#include "Log.hpp"
-#include "MNIST_Training.hpp"
-#include "MNIST_Inference.hpp"
-#include "Neural_Network.hpp"
-#include "Model_Config.hpp"
-
-#endif
+    if (config.module == "emnist") {
+        return new EMNIST_Utils_NS::EMNIST_Labels(config.labels_path);
+    }
+    
+    return new MNIST_Utils_NS::MNIST_Labels(config.labels_path);
+}
