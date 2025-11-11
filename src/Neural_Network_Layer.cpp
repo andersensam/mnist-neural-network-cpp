@@ -8,7 +8,7 @@
  *                                                                                                               
  * Project: Basic Neural Network in C++
  * @author : Samuel Andersen
- * @version: 2025-07-16
+ * @version: 2025-11-10
  *
  * General Notes:
  *
@@ -21,17 +21,17 @@ using Neural_Network_Layer_NS::Layer_Type;
 
 const Matrix* Neural_Network_Layer::get_matrix(Layer_Type layer_type) const {
 
-    if (layer_type == Layer_Type::WEIGHTS) { return (const Matrix*)m_weights; }
-    else if (layer_type == Layer_Type::BIASES) { return (const Matrix*)m_biases; }
-    else if (layer_type == Layer_Type::OUTPUTS) { return (const Matrix*)m_outputs; }
-    else if (layer_type == Layer_Type::ERRORS) { return (const Matrix*)m_errors; }
-    else if (layer_type == Layer_Type::NEW_WEIGHTS) { return (const Matrix*)m_new_weights; }
-    else if (layer_type == Layer_Type::Z) { return (const Matrix*)m_z; }
+    if (layer_type == Layer_Type::WEIGHTS) { return static_cast<const Matrix*>(m_weights); }
+    else if (layer_type == Layer_Type::BIASES) { return static_cast<const Matrix*>(m_biases); }
+    else if (layer_type == Layer_Type::OUTPUTS) { return static_cast<const Matrix*>(m_outputs); }
+    else if (layer_type == Layer_Type::ERRORS) { return static_cast<const Matrix*>(m_errors); }
+    else if (layer_type == Layer_Type::NEW_WEIGHTS) { return static_cast<const Matrix*>(m_new_weights); }
+    else if (layer_type == Layer_Type::Z) { return static_cast<const Matrix*>(m_z); }
 
     Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::get_matrix",
         "Invalid Layer_Type provided. Returning NULL");
 
-    return (const Matrix*)NULL;
+    return NULL;
 }
 
 Matrix* Neural_Network_Layer::get_matrix(Layer_Type layer_type) {
@@ -217,7 +217,7 @@ void Neural_Network_Layer::write_matrix(const Matrix& target, Layer_Type layer_t
             // If the sizes are not the same, free the existing Matrix
             if (NEURAL_NETWORK_LAYER_RESIZE_WARNING) {
                 Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::write_matrix",
-                    "Destination Matrix is of a different size. Deallocating first before cloning");
+                    "Destination weights Matrix is of a different size. Deallocating first before cloning");
             }
             delete m_weights;
         }
@@ -233,7 +233,7 @@ void Neural_Network_Layer::write_matrix(const Matrix& target, Layer_Type layer_t
             }
             if (NEURAL_NETWORK_LAYER_RESIZE_WARNING) {
                 Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::write_matrix",
-                    "Destination Matrix is of a different size. Deallocating first before cloning");
+                    "Destination bias Matrix is of a different size. Deallocating first before cloning");
             }
             delete m_biases;
         }
@@ -248,7 +248,7 @@ void Neural_Network_Layer::write_matrix(const Matrix& target, Layer_Type layer_t
             }
             if (NEURAL_NETWORK_LAYER_RESIZE_WARNING) {
                 Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::write_matrix",
-                    "Destination Matrix is of a different size. Deallocating first before cloning");
+                    "Destination output Matrix is of a different size. Deallocating first before cloning");
             }
             delete m_outputs;
         }
@@ -263,7 +263,7 @@ void Neural_Network_Layer::write_matrix(const Matrix& target, Layer_Type layer_t
             }
             if (NEURAL_NETWORK_LAYER_RESIZE_WARNING) {
                 Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::write_matrix",
-                    "Destination Matrix is of a different size. Deallocating first before cloning");
+                    "Destination error Matrix is of a different size. Deallocating first before cloning");
             }
             delete m_errors;
         }
@@ -278,7 +278,7 @@ void Neural_Network_Layer::write_matrix(const Matrix& target, Layer_Type layer_t
             }
             if (NEURAL_NETWORK_LAYER_RESIZE_WARNING) {
                 Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::write_matrix",
-                    "Destination Matrix is of a different size. Deallocating first before cloning");
+                    "Destination new wights Matrix is of a different size. Deallocating first before cloning");
             }
             delete m_new_weights;
         }
@@ -293,7 +293,7 @@ void Neural_Network_Layer::write_matrix(const Matrix& target, Layer_Type layer_t
             }
             if (NEURAL_NETWORK_LAYER_RESIZE_WARNING) {
                 Log::log_message(Log::Log_Priority::WARNING, "Neural_Network_Layer::write_matrix",
-                    "Destination Matrix is of a different size. Deallocating first before cloning");
+                    "Destination z Matrix is of a different size. Deallocating first before cloning");
             }
             delete m_z;
         }

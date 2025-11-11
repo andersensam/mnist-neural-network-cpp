@@ -82,11 +82,11 @@ void Neural_Network::training_inference(const Matrix& input) {
     for (size_t i = 1; i < m_num_layers; ++i) {
         // Special processing for the first hidden layer
         if (i == 1) {
-            Matrix hidden_inputs = Matrix(m_layers[i]->get_const(Layer_Type::WEIGHTS).rows(),
-                input.cols());
+            const Matrix& weights = m_layers[i]->get_const(Layer_Type::WEIGHTS);
+            Matrix hidden_inputs = Matrix(weights.rows(), input.cols());
 
             // Dot product of the first hidden layer's weights by the image input
-            m_layers[i]->get_const(Layer_Type::WEIGHTS).dot(input, hidden_inputs);
+            weights.dot(input, hidden_inputs);
 
             // Add the bias before proceeding
             hidden_inputs += m_layers[i]->get_const(Layer_Type::BIASES);
@@ -101,12 +101,12 @@ void Neural_Network::training_inference(const Matrix& input) {
             m_layers[i]->write_matrix(hidden_inputs, Layer_Type::OUTPUTS);
         }
         else {
-            Matrix hidden_inputs = Matrix(m_layers[i]->get_const(Layer_Type::WEIGHTS).rows(),
-                m_layers[i - 1]->get_const(Layer_Type::OUTPUTS).cols());
+            const Matrix& weights = m_layers[i]->get_const(Layer_Type::WEIGHTS);
+            const Matrix& prev_outputs =  m_layers[i - 1]->get_const(Layer_Type::OUTPUTS);
+            Matrix hidden_inputs = Matrix(weights.rows(), prev_outputs.cols());
 
             // The next layer's inputs are the dot of this layer's weights by the previous layer's output
-            m_layers[i]->get_const(Layer_Type::WEIGHTS).dot(
-                m_layers[i - 1]->get_const(Layer_Type::OUTPUTS), hidden_inputs);
+            weights.dot(prev_outputs, hidden_inputs);
                 
             hidden_inputs += m_layers[i]->get_const(Layer_Type::BIASES);
             m_layers[i]->write_matrix(hidden_inputs, Layer_Type::Z);
